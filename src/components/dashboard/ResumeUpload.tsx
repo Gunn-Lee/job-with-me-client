@@ -74,10 +74,10 @@ export default function ResumeUpload({
                 return (
                   <li 
                     key={resume.id} 
-                    className={`border rounded-md p-3 flex justify-between items-center cursor-pointer transition-colors border-gray-200 hover:bg-gray-50`}
-                    onClick={() => onSetActive(resume.id)}
+                    className={`border rounded-md p-3 flex justify-between items-center transition-colors border-gray-200 hover:bg-gray-50`}
+                    
                   >
-                    <div className="flex items-center">
+                    <div className="flex items-center cursor-pointer hover:drop-shadow" onClick={() => onSetActive(resume.id)}>
                       <FiFile className={`mr-2 text-blue-500'`} />
                       <div>
                         <div className="flex items-center">
@@ -97,7 +97,7 @@ export default function ResumeUpload({
                         e.stopPropagation(); // Prevent setting as active when clicking delete
                         onDelete(resume.id);
                       }}
-                      className="text-red-500 hover:text-red-700"
+                      className="text-red-500 hover:text-red-700 cursor-pointer"
                     >
                       <FiTrash />
                     </button>
