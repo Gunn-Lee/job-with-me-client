@@ -3,20 +3,60 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { useMutation } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
+import axios from "axios";
+import { useRouter } from "next/navigation";
 
 interface LoginFormData {
   email: string;
   password: string;
 }
 
+interface LoginResponse {
+  token: string;
+  user: {
+    id: string;
+    email: string;
+    name?: string;
+  };
+}
+
 const Login = () => {
+  const router = useRouter();
   const { login } = useAuth();
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
     password: "",
   });
   const [error, setError] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // Define login mutation using Tanstack Query
+  const loginMutation = useMutation({
+    mutationFn: async (data: LoginFormData): Promise<LoginResponse> => {
+      try {
+        const response = await axiosInstance.post("/api/auth/login", data);
+        return response.data;
+      } catch (error) {
+        if (axios.isAxiosError(error) && error.response) {
+          throw new Error(
+            error.response.data.message || "Authentication failed"
+          );
+        }
+        throw new Error("An unexpected error occurred");
+      }
+    },
+    onSuccess: (data) => {
+      login(data.token);
+      console.log("Login successful:", data);
+      router.push("/dashboard");
+    },
+    onError: (error) => {
+      setError(
+        error instanceof Error ? error.message : "An unexpected error occurred"
+      );
+    },
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -28,41 +68,8 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError("");
-
-    try {
-      // Here you would implement your authentication logic
-      // For example with a fetch call to your API:
-      /*
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Login failed');
-      }
-      
-      const { token } = await response.json();
-      login(token);
-      */
-
-      // For now, we'll just simulate a successful login after a delay
-      setTimeout(() => {
-        console.log("Login attempt with:", formData);
-        // Using a mock token for demonstration
-        login("mock_auth_token_" + Date.now());
-      }, 1000);
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "An unknown error occurred"
-      );
-    } finally {
-      setIsLoading(false);
-    }
+    setError(""); // Clear any previous errors
+    loginMutation.mutate(formData);
   };
 
   return (
@@ -116,10 +123,10 @@ const Login = () => {
 
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={loginMutation.isPending}
           className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLoading ? "Logging in..." : "Log In"}
+          {loginMutation.isPending ? "Logging in..." : "Log In"}
         </button>
       </form>
 
