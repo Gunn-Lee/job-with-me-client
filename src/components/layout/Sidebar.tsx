@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
+import { useAuthStore, useUser } from "@/store/authStore";
 
 // Icons can be replaced with any icon library you prefer
 const DashboardIcon = () => (
@@ -75,7 +75,8 @@ const navigationItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { logout } = useAuth();
+  const logout = useAuthStore((state) => state.logout);
+  const user = useUser();
 
   return (
     <div
@@ -122,6 +123,22 @@ export default function Sidebar() {
           )}
         </button>
       </div>
+
+      {!isCollapsed && user && (
+        <div className="px-4 py-3 border-t border-b border-gray-700">
+          <div className="flex items-center">
+            <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center text-white">
+              {user.name
+                ? user.name[0].toUpperCase()
+                : user.email[0].toUpperCase()}
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium">{user.name || user.email}</p>
+              <p className="text-xs text-gray-400">{user.email}</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <nav className="mt-6">
         <div className="px-4 space-y-2">

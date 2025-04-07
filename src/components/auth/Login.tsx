@@ -2,61 +2,23 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useAuth } from "@/context/AuthContext";
-import { useMutation } from "@tanstack/react-query";
-import axiosInstance from "@/lib/axios";
-import axios from "axios";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/authStore";
 
 interface LoginFormData {
   email: string;
   password: string;
 }
 
-interface LoginResponse {
-  token: string;
-  user: {
-    id: string;
-    email: string;
-    name?: string;
-  };
-}
-
 const Login = () => {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, error: authError, isLoading, clearError } = useAuthStore();
+
   const [formData, setFormData] = useState<LoginFormData>({
     email: "",
     password: "",
   });
-  const [error, setError] = useState<string>("");
-
-  // Define login mutation using Tanstack Query
-  const loginMutation = useMutation({
-    mutationFn: async (data: LoginFormData): Promise<LoginResponse> => {
-      try {
-        const response = await axiosInstance.post("/api/auth/login", data);
-        return response.data;
-      } catch (error) {
-        if (axios.isAxiosError(error) && error.response) {
-          throw new Error(
-            error.response.data.message || "Authentication failed"
-          );
-        }
-        throw new Error("An unexpected error occurred");
-      }
-    },
-    onSuccess: (data) => {
-      login(data.token);
-      console.log("Login successful:", data);
-      router.push("/dashboard");
-    },
-    onError: (error) => {
-      setError(
-        error instanceof Error ? error.message : "An unexpected error occurred"
-      );
-    },
-  });
+  const [formError, setFormError] = useState<string>("");
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -64,21 +26,44 @@ const Login = () => {
       ...prev,
       [name]: value,
     }));
+
+    // Clear errors when user starts typing
+    if (authError) clearError();
+    if (formError) setFormError("");
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(""); // Clear any previous errors
-    loginMutation.mutate(formData);
+
+    // Basic validation
+    if (!formData.email || !formData.password) {
+      setFormError("Email and password are required");
+      return;
+    }
+
+    try {
+      await login(formData.email, formData.password);
+      console.log("Login successful, redirecting to dashboard");
+
+      // Add a small delay to ensure the auth state is updated
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 100);
+    } catch (error) {
+      console.error("Login error in component:", error);
+    }
   };
+
+  // Display either form validation errors or auth errors
+  const errorMessage = formError || authError;
 
   return (
     <div className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-6 text-center">Log In</h2>
 
-      {error && (
+      {errorMessage && (
         <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-          {error}
+          {errorMessage}
         </div>
       )}
 
@@ -123,10 +108,10 @@ const Login = () => {
 
         <button
           type="submit"
-          disabled={loginMutation.isPending}
+          disabled={isLoading}
           className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loginMutation.isPending ? "Logging in..." : "Log In"}
+          {isLoading ? "Logging in..." : "Log In"}
         </button>
       </form>
 
