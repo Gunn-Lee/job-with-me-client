@@ -33,6 +33,7 @@ yarn dev
 pnpm dev
 # or
 bun dev
+```
 
 Then open http://localhost:3000 with your browser to see the app running.
 
