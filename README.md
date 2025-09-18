@@ -1,8 +1,3 @@
-Here’s a solid README.md draft you can use. I’ve kept the Next.js boilerplate parts but expanded on your app’s purpose and current functionality so it feels more polished and useful for collaborators or future contributors.
-
-⸻
-
-
 # 📄 Cover Letter & Job Application Assistant
 
 This project is a **Next.js 15 application** designed to streamline the job application process.  
